@@ -1,0 +1,80 @@
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:chatdb}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:password}
+    driver-class-name: org.postgresql.Driver
+
+  cache:
+    type: caffeine
+    cache-names: chatSessions, chatMessages, chatSessionsByUser, chatSessionById
+    caffeine:
+      spec: maximumSize=100,expireAfterWrite=10m
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    defer-datasource-initialization: true
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  sql:
+    init:
+      mode: never
+
+openai:
+  api:
+    key: ${OPENAI_API_KEY}
+
+api:
+  keys: ${API_KEYS}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, caches, metrics, env
+  endpoint:
+    health:
+      show-details: always
+    caches:
+      enabled: true
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    com.ragchat: DEBUG
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui/index.html
+
+resilience4j:
+  retry:
+    instances:
+      openaiRetry:
+        max-attempts: 3
+        wait-duration: 2s
+        enable-exponential-backoff: true
+        retry-exceptions:
+          - org.springframework.web.reactive.function.client.WebClientRequestException
+          - java.io.IOException
+
+  circuitbreaker:
+    instances:
+      openaiCB:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        automatic-transition-from-open-to-half-open-enabled: true
