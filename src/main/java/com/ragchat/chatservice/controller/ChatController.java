@@ -23,7 +23,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/chat")
-@Tag(name = "Chat Controller", description = "Endpoints for managing chat sessions and messages")
 public class ChatController {
 
     private static final Logger log = LoggerFactory.getLogger(ChatController.class);
@@ -34,100 +33,88 @@ public class ChatController {
     @Autowired
     private AIResponseService aiResponseService;
 
+    // -------------------- SESSION MANAGEMENT --------------------
 
-    // ✅ CREATE SESSION
     @PostMapping("/session")
-    @Operation(summary = "Create a new chat session")
+    @Operation(summary = "Create a new chat session", tags = {"Sessions"})
     public ResponseEntity<ApiResponseDTO> createSession(@Valid @RequestBody ChatSessionDTO dto) {
-        log.info("Received request to create session for userId={}", dto.getUserId());
-        ApiResponseDTO response = chatService.createSession(dto);
-        return ResponseEntity.ok(response);
+        log.info("Creating session for userId={}", dto.getUserId());
+        return ResponseEntity.ok(chatService.createSession(dto));
     }
 
-    // ✅ DELETE SESSION
-    @DeleteMapping("/session/{sessionId}")
-    @Operation(summary = "Delete a chat session and its messages")
-    public ResponseEntity<ApiResponseDTO> deleteSession(@PathVariable UUID sessionId) {
-        log.info("Deleting session with ID={}", sessionId);
-        ApiResponseDTO response = chatService.deleteSession(sessionId);
-        return ResponseEntity.ok(response);
-    }
-
-    // ✅ UPDATE SESSION
-    // ✅ UPDATE SESSION (no @Valid → validation handled inside service)
-    @PutMapping("/session/{sessionId}")
-    @Operation(
-            summary = "Update session name or favorite flag",
-            description = "Updates session details. User ID cannot be changed. "
-                    + "Name is mandatory for update. Favorite is optional."
-    )
-    public ResponseEntity<ApiResponseDTO> updateSession(
-            @Parameter(description = "Session ID to update")
-            @PathVariable UUID sessionId,
-            @RequestBody ChatSessionDTO dto) {  // ✅ Removed @Valid here
-        log.info("Updating session with ID={}", sessionId);
-        ApiResponseDTO response = chatService.updateSession(sessionId, dto);
-        return ResponseEntity.ok(response);
-    }
-
-    // ✅ GET SESSION DETAILS
     @GetMapping("/session/{sessionId}")
-    @Operation(summary = "Get session details by ID")
+    @Operation(summary = "Get chat session details by ID", tags = {"Sessions"})
     public ResponseEntity<ApiResponseDTO> getSession(@PathVariable UUID sessionId) {
-        log.info("Fetching session details for ID={}", sessionId);
-        ApiResponseDTO response = chatService.getSession(sessionId);
-        return ResponseEntity.ok(response);
+        ChatSessionDTO session = chatService.getSessionById(sessionId);
+        if (session == null) {
+            throw new ResourceNotFoundException("Chat session not found for ID: " + sessionId);
+        }
+        return ResponseEntity.ok(new ApiResponseDTO(200, "Session fetched successfully", session));
     }
 
-    // ✅ ADD MESSAGE
+    @PutMapping("/session/{sessionId}")
+    @Operation(summary = "Update chat session name or favorite flag", tags = {"Sessions"})
+    public ResponseEntity<ApiResponseDTO> updateSession(
+            @Parameter(description = "Session ID to update") @PathVariable UUID sessionId,
+            @RequestBody ChatSessionDTO dto) {
+        return ResponseEntity.ok(chatService.updateSession(sessionId, dto));
+    }
+
+    @DeleteMapping("/session/{sessionId}")
+    @Operation(summary = "Delete chat session and its messages", tags = {"Sessions"})
+    public ResponseEntity<ApiResponseDTO> deleteSession(@PathVariable UUID sessionId) {
+        return ResponseEntity.ok(chatService.deleteSession(sessionId));
+    }
+
+    @PatchMapping("/session/{sessionId}/favorite")
+    @Operation(summary = "Toggle favorite status of a chat session", tags = {"Sessions"})
+    public ResponseEntity<ApiResponseDTO> toggleFavorite(@PathVariable UUID sessionId) {
+        return ResponseEntity.ok(chatService.toggleFavorite(sessionId));
+    }
+
+    // -------------------- MESSAGE MANAGEMENT --------------------
+
     @PostMapping("/session/{sessionId}/message")
-    @Operation(summary = "Add a message to a chat session")
+    @Operation(summary = "Add a message to a chat session", tags = {"Messages"})
     public ResponseEntity<ApiResponseDTO> addMessage(
             @PathVariable UUID sessionId,
             @Valid @RequestBody MessageDTO dto) {
-        log.info("Adding message to sessionId={}", sessionId);
-        ApiResponseDTO response = chatService.addMessage(sessionId, dto);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(chatService.addMessage(sessionId, dto));
     }
 
-    // ✅ GET MESSAGES
     @GetMapping("/session/{sessionId}/messages")
-    @Operation(summary = "Retrieve messages for a session with pagination")
+    @Operation(summary = "Retrieve messages for a session (with pagination)", tags = {"Messages"})
     public ResponseEntity<ApiResponseDTO> getMessages(
+            @Parameter(description = "Unique chat session ID")
             @PathVariable UUID sessionId,
+
+            @Parameter(description = "Page number (starting from 0)", example = "0", schema = @io.swagger.v3.oas.annotations.media.Schema(type = "integer", format = "int64"))
             @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Number of records per page", example = "10", schema = @io.swagger.v3.oas.annotations.media.Schema(type = "integer", format = "int64"))
             @RequestParam(defaultValue = "10") int size) {
+
         log.info("Fetching messages for sessionId={}, page={}, size={}", sessionId, page, size);
         ApiResponseDTO response = chatService.getMessages(sessionId, page, size);
         return ResponseEntity.ok(response);
     }
 
-    // ✅ TOGGLE FAVORITE
-    @PatchMapping("/session/{sessionId}/favorite")
-    @Operation(summary = "Toggle favorite status of a session")
-    public ResponseEntity<ApiResponseDTO> toggleFavorite(@PathVariable UUID sessionId) {
-        log.info("Toggling favorite for sessionId={}", sessionId);
-        ApiResponseDTO response = chatService.toggleFavorite(sessionId);
-        return ResponseEntity.ok(response);
-    }
+
+    // -------------------- OPENAI CHAT --------------------
 
     @PostMapping("/sessions/{sessionId}/chat")
-    @Operation(summary = "Chat with OpenAI", description = "Sends a message to OpenAI and stores both user and AI responses under the session")
+    @Operation(summary = "Chat with OpenAI (stores both user and AI messages)", tags = {"OpenAI"})
     public ResponseEntity<ApiResponseDTO> chatWithOpenAI(
             @PathVariable UUID sessionId,
             @Valid @RequestBody MessageDTO messageDTO) {
 
-        // ✅ Step 1: Validate session existence
         ChatSessionDTO session = chatService.getSessionById(sessionId);
-        if (session == null) {
+        if (session == null)
             throw new ResourceNotFoundException("Chat session not found for ID: " + sessionId);
-        }
 
-        // ✅ Step 2: Save the user message
         messageDTO.setSender("user");
         chatService.addMessage(sessionId, messageDTO);
 
-        // ✅ Step 3: Call OpenAI to get response
         String aiReply;
         try {
             aiReply = aiResponseService.getAIResponse(
@@ -136,20 +123,29 @@ public class ChatController {
                     ))
             );
         } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_GATEWAY)
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                     .body(new ApiResponseDTO(502, "Failed to get response from OpenAI", e.getMessage()));
         }
 
-        // ✅ Step 4: Save AI message
         MessageDTO aiMessage = new MessageDTO();
         aiMessage.setSender("assistant");
         aiMessage.setMessage(aiReply);
         chatService.addMessage(sessionId, aiMessage);
 
-        // ✅ Step 5: Return response
         return ResponseEntity.ok(
                 new ApiResponseDTO(200, "Chat response generated successfully", aiMessage)
         );
+    }
+
+    // -------------------- ADMIN UTILITY (Protected via API Key) --------------------
+
+    @PostMapping("/admin/clear-caches")
+    @Operation(
+            summary = "Clear all application caches",
+            description = "Clears all in-memory caches such as chatSessions, chatMessages, etc.", tags = {"Clear Cache"}
+    )
+    public ResponseEntity<ApiResponseDTO> clearAllCaches() {
+        ApiResponseDTO response = chatService.clearAllCaches();
+        return ResponseEntity.ok(response);
     }
 }

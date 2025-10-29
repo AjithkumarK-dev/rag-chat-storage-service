@@ -15,9 +15,9 @@ public class MessageDTO {
     @Schema(description = "Unique message ID", accessMode = Schema.AccessMode.READ_ONLY)
     private UUID id;
 
-    @NotNull(message = "Session ID is required")
+  /*  @NotNull(message = "Session ID is required")
     @Schema(description = "ID of the chat session this message belongs to", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
-    private UUID sessionId;
+    private UUID sessionId;*/
 
     @NotBlank(message = "Sender is required")
     @Pattern(regexp = "^(user|assistant)$", message = "Sender must be either 'user' or 'assistant'")

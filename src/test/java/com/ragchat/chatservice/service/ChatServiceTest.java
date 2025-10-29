@@ -94,7 +94,7 @@ public class ChatServiceTest {
         when(chatSessionRepository.findById(any(UUID.class))).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () ->
-                chatService.getSession(UUID.randomUUID()));
+                chatService.getSessionById(UUID.randomUUID()));
     }
 
     @Test

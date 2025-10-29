@@ -96,6 +96,8 @@ API_KEYS=testkey1,testkey2,testkey3
 SERVER_PORT=8080
 ```
 
+> ⚠️ **Note:** Make sure **Docker Desktop** (or Docker Engine) is installed and running before executing the commands below.
+
 Run everything with one command:
 ```bash
 docker compose up --build
@@ -105,8 +107,8 @@ docker compose up --build
 - Starts PostgreSQL + pgAdmin containers.
 - Builds and launches Spring Boot after DB is healthy.
 - Exposes ports:
-    - App → 8080
-    - pgAdmin → 5050
+  - App → 8080
+  - pgAdmin → 5050
 
 To verify:
 ```bash
@@ -149,6 +151,20 @@ Gracefully handles rate limits or downtime with fallback responses.
 
 ---
 
+
+### 🆕 Clear All Caches
+**POST** `/api/chat/admin/clear-caches`  
+Clears all in-memory caches such as `chatSessions`, `chatMessages`, etc.
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "All caches cleared successfully",
+  "data": null
+}
+```
+---
 ## 🤖 OpenAI Integration
 - Non-blocking **WebClient** with API key authentication.
 - Supports multiple keys from `.env`.
