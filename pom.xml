@@ -6,12 +6,12 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- ✅ Spring Boot Parent for version management -->
+    <!-- Spring Boot Parent for version management -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.3.0</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
 
     <groupId>com.ragchat.chatservice</groupId>
@@ -27,22 +27,22 @@
         <maven.compiler.release>17</maven.compiler.release>
     </properties>
 
-    <!-- ✅ Dependencies -->
+    <!-- Dependencies -->
     <dependencies>
 
-        <!-- 🌐 Web Starter -->
+        <!-- Web Starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- 🗃️ JPA + Database -->
+        <!-- JPA + Database -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- 🧠 Actuator (Health Monitoring) -->
+        <!-- Actuator (Health Monitoring) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
@@ -59,41 +59,41 @@
             <version>3.2.0</version>
         </dependency>
 
-        <!-- 🔐 Spring Security -->
+        <!-- Spring Security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- 🐘 PostgreSQL Driver -->
+        <!-- PostgreSQL Driver -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-        <!-- 🧰 Lombok (for @Data, @NoArgsConstructor, etc.) -->
+        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
 
-        <!-- 📘 Swagger / OpenAPI -->
+        <!-- Swagger / OpenAPI -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.5.0</version>
         </dependency>
 
-        <!-- 🚦 Rate Limiting (Java 17 version) -->
+        <!-- Rate Limiting (Java 17 version) -->
         <dependency>
             <groupId>com.bucket4j</groupId>
             <artifactId>bucket4j_jdk17-core</artifactId>
             <version>8.15.0</version>
         </dependency>
 
-        <!-- 🔄 DevTools (auto-restart during development) -->
+        <!-- DevTools (auto-restart during development) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
@@ -101,7 +101,7 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- 🧪 Testing -->
+        <!-- Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -125,29 +125,28 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- ✅ Spring Cache Starter -->
+        <!-- Spring Cache Starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
 
-        <!-- ✅ Caffeine Cache Provider -->
+        <!-- Caffeine Cache Provider -->
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
         </dependency>
 
-        <!-- ✅ Automatically load variables from .env file -->
+        <!-- Automatically load variables from .env file -->
         <dependency>
             <groupId>me.paulschwarz</groupId>
             <artifactId>spring-dotenv</artifactId>
             <version>4.0.0</version>
         </dependency>
 
-
     </dependencies>
 
-    <!-- ⚙️ Build -->
+    <!-- Build -->
     <build>
         <plugins>
             <plugin>
