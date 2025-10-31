@@ -1,7 +1,7 @@
 # 🧠 RAG Chat Storage Service — Backend Microservice
 
 **RAG Chat Storage** microservice that securely stores and manages chat sessions and messages for a **Retrieval-Augmented Generation (RAG)** chatbot system.  
-Includes optional **AI response integration**, along with **caching**, **resilience**, **rate limiting**, and **fault-tolerant design** — fully containerized using **Docker Compose**.
+Includes **AI response integration**, along with **caching**, **resilience**, **rate limiting**, and **fault-tolerant design** — fully containerized using **Docker Compose**.
 
 ---
 
@@ -15,7 +15,7 @@ Includes optional **AI response integration**, along with **caching**, **resilie
 7. [🖥️ Manual Local Run](#️-manual-local-run)
 8. [🧠 Resilience & Fallback](#-resilience--fallback)
 9. [💾 Caching](#-caching)
-10. [🤖 OpenAI Integration](#-openai-integration)
+10. [🤖 Groq AI Integration (Implemented)](#-groq-ai-integration-implemented)
 11. [📘 API Endpoints](#-api-endpoints)
 12. [🧩 Sample API Requests & Responses](#-sample-api-requests--responses)
 13. [🧩 Monitoring](#-monitoring)
@@ -63,7 +63,7 @@ Includes optional **AI response integration**, along with **caching**, **resilie
 ```
 Swagger → Controller → Service → Repository → PostgreSQL
                    ↘︎
-                    ↳ AIResponseService → OpenAI API
+                    ↳ AIResponseService → Groq AI API
                        (Retry + CircuitBreaker + Fallback)
 ```
 
@@ -91,7 +91,7 @@ DB_PASS=password
 DB_NAME=chatdb
 DB_HOST=chatdb
 DB_PORT=5432
-OPENAI_API_KEY=dummy_key
+GROQ_API_KEY=your_groq_api_key_here
 API_KEYS=testkey1,testkey2,testkey3
 SERVER_PORT=8080
 ```
@@ -134,10 +134,10 @@ mvn spring-boot:run
 ---
 
 ## 🧠 Resilience & Fallback
-OpenAI calls are wrapped with **Resilience4j** annotations:
+Groq API calls are wrapped with **Resilience4j** annotations:
 ```java
-@Retry(name = "openaiRetry", fallbackMethod = "fallbackResponse")
-@CircuitBreaker(name = "openaiCB", fallbackMethod = "fallbackResponse")
+@Retry(name = "groqRetry", fallbackMethod = "fallbackResponse")
+@CircuitBreaker(name = "groqCB", fallbackMethod = "fallbackResponse")
 ```
 Gracefully handles rate limits or downtime with fallback responses.
 
@@ -150,7 +150,6 @@ Gracefully handles rate limits or downtime with fallback responses.
   🔗 [http://localhost:8080/actuator/caches](http://localhost:8080/actuator/caches)
 
 ---
-
 
 ### 🆕 Clear All Caches
 **POST** `/api/chat/admin/clear-caches`  
@@ -165,12 +164,6 @@ Clears all in-memory caches such as `chatSessions`, `chatMessages`, etc.
 }
 ```
 ---
-## 🤖 OpenAI Integration
-- Non-blocking **WebClient** with API key authentication.
-- Supports multiple keys from `.env`.
-- Integrated with Retry + CircuitBreaker for fault tolerance.
-
----
 
 ## 📘 API Endpoints
 | Type | Method | Endpoint | Description |
@@ -182,7 +175,7 @@ Clears all in-memory caches such as `chatSessions`, `chatMessages`, etc.
 | Session | DELETE | `/api/chat/session/{id}` | Delete session |
 | Message | POST | `/api/chat/session/{id}/message` | Add message |
 | Message | GET | `/api/chat/session/{id}/messages?page=&size=` | Retrieve paginated messages |
-| OpenAI | POST | `/api/chat/session/{id}/chat` | Chat with AI (needs valid key) |
+| Chat | POST | `/api/chat/session/{id}/chat` | Chat with AI (Groq Integration) |
 
 ---
 
@@ -322,7 +315,7 @@ All requests assume Swagger authorization is done.
       "id": "20f80fcf-3c7f-4492-89ad-7408396798bb",
       "sessionId": "ff084f28-36ef-492c-92af-cb63b7dfbd47",
       "sender": "assistant",
-      "message": "No response received from OpenAI."
+      "message": "No response received from Groq AI."
     }
   ]
 }
@@ -332,18 +325,18 @@ All requests assume Swagger authorization is done.
 **POST** `/api/chat/session/{sessionId}/chat`
 ```json
 {
-  "sessionId": "2a9c1bde-6d1f-4e8a-9a34-72e3f1a7a233",
-  "prompt": "What is RAG architecture?"
+  "sender": "user",
+  "message": "Explain RTGS in banking"
 }
 ```
 **Response:**
 ```json
 {
   "code": 200,
-  "message": "AI response generated successfully",
+  "message": "Chat response generated successfully",
   "data": {
-    "sessionId": "2a9c1bde-6d1f-4e8a-9a34-72e3f1a7a233",
-    "response": "RAG (Retrieval-Augmented Generation) combines LLMs with retrieval from a knowledge source to improve factuality and context."
+    "sender": "assistant",
+    "message": "RTGS (Real-Time Gross Settlement) enables instant fund transfers between banks in real-time."
   }
 }
 ```
@@ -390,7 +383,7 @@ All requests assume Swagger authorization is done.
 ## 👤 Author
 **Ajith Kumar K**  
 Senior Java Developer — Payments Domain  
-🌐 GitHub: [AjithkumarK-dev](https://github.com/AjithkumarK-dev)
+🌐 GitHub: [rag-chat-storage-service](https://github.com/AjithkumarK-dev/rag-chat-storage-service)
 
 ---
 

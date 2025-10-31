@@ -44,7 +44,7 @@ public class ChatService {
     private CacheManager cacheManager;
 
     /**
-     * ✅ Create a new chat session
+     * Create a new chat session
      */
     @Transactional
     @CachePut(value = "chatSessions", key = "#result.data.id")
@@ -58,7 +58,7 @@ public class ChatService {
     }
 
     /**
-     * ✅ Get session details by ID (returns ChatSessionDTO for controller compatibility)
+     * Get session details by ID (returns ChatSessionDTO for controller compatibility)
      */
     @Cacheable(value = "chatSessionById", key = "#sessionId")
     public ChatSessionDTO getSessionById(UUID sessionId) {
@@ -69,7 +69,7 @@ public class ChatService {
     }
 
     /**
-     * ✅ Get all sessions for a specific user
+     * Get all sessions for a specific user
      */
     @Cacheable(value = "chatSessionsByUser", key = "#userId")
     public ApiResponseDTO getAllSessions(String userId) {
@@ -82,7 +82,7 @@ public class ChatService {
     }
 
     /**
-     * ✅ Update session name or favorite status
+     * Update session name or favorite status
      */
     @Transactional
     @CacheEvict(value = {"chatSessions", "chatSessionsByUser", "chatSessionById"}, allEntries = true)
@@ -101,14 +101,15 @@ public class ChatService {
         ChatSession saved = chatSessionRepository.save(session);
         ChatSessionDTO updated = modelMapper.map(saved, ChatSessionDTO.class);
 
-        log.info("✏️ Updated session for sessionId={}, name='{}', favorite={}",
+        log.info("Updated session for sessionId={}, name='{}', favorite={}",
                 sessionId, dto.getName(), dto.isFavorite());
 
         return new ApiResponseDTO(200, "Session updated successfully", updated);
     }
 
     /**
-     * ✅ Delete a session and its messages
+     * Delete a session and its messages
+     * (Now uses ORM cascade delete)
      */
     @Transactional
     @CacheEvict(value = {"chatSessions", "chatSessionsByUser", "chatSessionById", "chatMessages"}, allEntries = true)
@@ -117,15 +118,15 @@ public class ChatService {
         ChatSession session = chatSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found with id " + sessionId));
 
-        chatMessageRepository.deleteBySessionId(sessionId);
+        // ORM cascade handles it automatically
         chatSessionRepository.delete(session);
 
-        log.info("🗑️ Session {} and related messages deleted", sessionId);
+        log.info("Session {} and related messages deleted", sessionId);
         return new ApiResponseDTO(200, "Session deleted successfully", null);
     }
 
     /**
-     * ✅ Add message to a chat session
+     * Add message to a chat session (ORM-linked)
      */
     @Transactional
     @CacheEvict(value = "chatMessages", key = "#sessionId")
@@ -134,8 +135,11 @@ public class ChatService {
             throw new ResourceNotFoundException("Session not found with id " + sessionId);
         }
 
+        ChatSession session = chatSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Session not found with id " + sessionId));
+
         ChatMessage message = modelMapper.map(dto, ChatMessage.class);
-        message.setSessionId(sessionId);
+        message.setSession(session); //ORM link added here
 
         ChatMessage saved = chatMessageRepository.saveAndFlush(message);
         MessageDTO response = modelMapper.map(saved, MessageDTO.class);
@@ -144,7 +148,7 @@ public class ChatService {
     }
 
     /**
-     * ✅ Get messages for a session (with pagination)
+     * Get messages for a session (with pagination)
      */
     @Cacheable(value = "chatMessages", key = "#sessionId + '-' + #page + '-' + #size")
     public ApiResponseDTO getMessages(UUID sessionId, int page, int size) {
@@ -165,7 +169,7 @@ public class ChatService {
     }
 
     /**
-     * ✅ Toggle favorite status
+     * Toggle favorite status
      */
     @Transactional
     @CacheEvict(value = {"chatSessions", "chatSessionsByUser", "chatSessionById"}, allEntries = true)
@@ -177,11 +181,11 @@ public class ChatService {
         chatSessionRepository.save(session);
 
         ChatSessionDTO dto = modelMapper.map(session, ChatSessionDTO.class);
-        log.info("⭐ Favorite toggled for session {} -> {}", sessionId, session.isFavorite());
+        log.info("Favorite toggled for session {} -> {}", sessionId, session.isFavorite());
         return new ApiResponseDTO(200, "Favorite toggled successfully", dto);
     }
 
-    // ✅ Clear all caches programmatically
+    //Clear all caches programmatically
     public ApiResponseDTO clearAllCaches() {
         cacheManager.getCacheNames().forEach(name -> {
             Cache cache = cacheManager.getCache(name);

@@ -100,11 +100,11 @@ public class ChatController {
     }
 
 
-    // -------------------- OPENAI CHAT --------------------
+    // -------------------- GroqAI CHAT --------------------
 
     @PostMapping("/sessions/{sessionId}/chat")
-    @Operation(summary = "Chat with OpenAI (stores both user and AI messages)", tags = {"OpenAI"})
-    public ResponseEntity<ApiResponseDTO> chatWithOpenAI(
+    @Operation(summary = "Chat with Groq AI (stores both user and AI messages)", tags = {"Groq AI"})
+    public ResponseEntity<ApiResponseDTO> chatWithGroqAI(
             @PathVariable UUID sessionId,
             @Valid @RequestBody MessageDTO messageDTO) {
 
@@ -112,6 +112,7 @@ public class ChatController {
         if (session == null)
             throw new ResourceNotFoundException("Chat session not found for ID: " + sessionId);
 
+        // Save user message
         messageDTO.setSender("user");
         chatService.addMessage(sessionId, messageDTO);
 
@@ -123,10 +124,12 @@ public class ChatController {
                     ))
             );
         } catch (Exception e) {
+            log.error("Error communicating with Groq AI: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                    .body(new ApiResponseDTO(502, "Failed to get response from OpenAI", e.getMessage()));
+                    .body(new ApiResponseDTO(502, "Failed to get response from Groq AI", e.getMessage()));
         }
 
+        // Save AI response
         MessageDTO aiMessage = new MessageDTO();
         aiMessage.setSender("assistant");
         aiMessage.setMessage(aiReply);

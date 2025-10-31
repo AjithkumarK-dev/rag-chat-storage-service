@@ -18,49 +18,53 @@ public class AIResponseService {
 
     private final WebClient webClient;
 
-    @Value("${openai.api.key}")
-    private String openAiApiKey;
+    @Value("${groq.api.key}")
+    private String groqApiKey;
 
     public AIResponseService(WebClient.Builder webClientBuilder) {
+        //Use Groq's OpenAI-compatible endpoint
         this.webClient = webClientBuilder
-                .baseUrl("https://api.openai.com/v1/chat/completions")
+                .baseUrl("https://api.groq.com/openai/v1")
                 .build();
     }
 
     /**
-     * Sends a prompt to OpenAI and returns the generated response text.
-     * Retries automatically and uses a circuit breaker as defined in application.yml.
+     * Sends a prompt to Groq (Llama 3.1) and returns the generated response text.
+     * Includes retry and circuit breaker mechanisms.
      */
-    @Retry(name = "openaiRetry", fallbackMethod = "fallbackResponse")
-    @CircuitBreaker(name = "openaiCB", fallbackMethod = "fallbackResponse")
+    @Retry(name = "groqRetry", fallbackMethod = "fallbackResponse")
+    @CircuitBreaker(name = "groqCB", fallbackMethod = "fallbackResponse")
     public String getAIResponse(Map<String, Object> requestBody) {
         try {
             Map<String, Object> request = Map.of(
-                    "model", "gpt-3.5-turbo",
+                    "model", "llama-3.1-8b-instant",
                     "messages", requestBody.get("messages"),
                     "temperature", 0.7
             );
 
+            log.info("Sending prompt to Groq API...");
+
             Map<String, Object> response = webClient.post()
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + openAiApiKey)
+                    .uri("/chat/completions")
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + groqApiKey)
                     .header(HttpHeaders.CONTENT_TYPE, "application/json")
                     .bodyValue(request)
                     .retrieve()
                     .bodyToMono(Map.class)
                     .onErrorResume(e -> {
-                        log.error("Error calling OpenAI API: {}", e.getMessage());
+                        log.error("Error calling Groq API: {}", e.getMessage());
                         return Mono.empty();
                     })
                     .block();
 
             if (response == null || !response.containsKey("choices")) {
-                log.warn("No valid response received from OpenAI.");
-                return "No response received from OpenAI.";
+                log.warn("No valid response received from Groq.");
+                return "No response received from Groq.";
             }
 
             List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
             if (choices.isEmpty()) {
-                return "No choices returned by OpenAI.";
+                return "No choices returned by Groq.";
             }
 
             Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
@@ -70,15 +74,15 @@ public class AIResponseService {
 
         } catch (Exception e) {
             log.error("Exception while fetching AI response: {}", e.getMessage());
-            return "Error communicating with OpenAI API.";
+            return "Error communicating with Groq API.";
         }
     }
 
     /**
-     * Fallback executed when OpenAI service fails repeatedly or circuit is open.
+     * Fallback executed when Groq service fails repeatedly or circuit is open.
      */
     private String fallbackResponse(Map<String, Object> requestBody, Throwable t) {
-        log.error("OpenAI service fallback triggered: {}", t.getMessage());
-        return "OpenAI service is temporarily unavailable. Please try again later.";
+        log.error("Groq service fallback triggered: {}", t.getMessage());
+        return "Groq AI service is temporarily unavailable. Please try again later.";
     }
 }

@@ -29,9 +29,9 @@ public class ApiKeyFilter implements Filter {
     @PostConstruct
     public void init() {
         if (keys == null || keys.isEmpty()) {
-            log.warn("⚠️ No API keys configured — API key validation will be skipped (development mode).");
+            log.warn("No API keys configured — API key validation will be skipped (development mode).");
         } else {
-            log.info("✅ Loaded {} API key(s) for authentication", keys.size());
+            log.info("Loaded {} API key(s) for authentication", keys.size());
         }
     }
 
@@ -53,7 +53,7 @@ public class ApiKeyFilter implements Filter {
             return;
         }
 
-        // Skip key validation entirely if no keys are configured (dev mode)
+        // Skip key validation entirely if no keys are configured
         if (keys == null || keys.isEmpty()) {
             log.debug("Skipping API key check — no keys configured (dev mode).");
             chain.doFilter(request, response);

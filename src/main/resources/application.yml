@@ -27,9 +27,9 @@ spring:
     init:
       mode: never
 
-openai:
+groq:
   api:
-    key: ${OPENAI_API_KEY}
+    key: ${GROQ_API_KEY}
 
 api:
   keys: ${API_KEYS}

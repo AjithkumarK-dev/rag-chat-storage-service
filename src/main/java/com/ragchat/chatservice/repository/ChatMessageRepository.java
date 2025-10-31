@@ -12,12 +12,9 @@ import java.util.UUID;
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> {
 
-    // Existing method for ordered retrieval
     List<ChatMessage> findBySessionIdOrderByCreatedAtAsc(UUID sessionId);
 
-    // New method to support pagination
     Page<ChatMessage> findBySessionId(UUID sessionId, Pageable pageable);
 
-    // Optional: To support delete by sessionId
     void deleteBySessionId(UUID sessionId);
 }

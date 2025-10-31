@@ -22,13 +22,10 @@ public class ChatMessage {
     private UUID id;
 
     @Column(nullable = false)
-    private UUID sessionId;
-
-    @Column(nullable = false)
     private String sender;   // "user" or "assistant"
 
     @Column(columnDefinition = "TEXT", nullable = false)
-    private String message;  // ✅ actual message content
+    private String message;  // actual message content
 
     @CreationTimestamp
     @Column(updatable = false, nullable = false)
@@ -37,4 +34,8 @@ public class ChatMessage {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "session_id", nullable = false)
+    private ChatSession session;
 }
